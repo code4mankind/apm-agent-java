@@ -22,6 +22,8 @@ package co.elastic.apm.agent.bci;
 import java.io.File;
 import java.lang.instrument.Instrumentation;
 import java.net.URISyntaxException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.util.jar.JarFile;
 
 /**
@@ -67,6 +69,11 @@ public class AgentMain {
             return;
         }
         try {
+            // Explicitly call FileSystems.getDefault() due to known bug in JDK that wont be patched until 8u231.
+            // This is a JVM bug logged as https://bugs.openjdk.java.net/browse/JDK-8194653
+            // Calling `FileSystems.getDefault` concurrently might cause dead locks.
+            FileSystems.getDefault();
+            
             final File agentJarFile = getAgentJarFile();
             try (JarFile jarFile = new JarFile(agentJarFile)) {
                 instrumentation.appendToBootstrapClassLoaderSearch(jarFile);
